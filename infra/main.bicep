@@ -1,13 +1,14 @@
 var resourceNamePrefix = 'logicapp-flow'
+var resourceNameSuffix = '-dev'
 var resourceLocation = 'westeurope'
 
 resource workspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: '${resourceNamePrefix}-logs'
+  name: '${resourceNamePrefix}-logs-${resourceNameSuffix}'
   location: resourceLocation
 }
 
 resource appserviceplan 'Microsoft.Web/serverfarms@2021-01-15' = {
-  name: '${resourceNamePrefix}-host'
+  name: '${resourceNamePrefix}-host-${resourceNameSuffix}'
   location: resourceLocation
   kind: 'elastic'
   sku: {
@@ -21,7 +22,7 @@ resource appserviceplan 'Microsoft.Web/serverfarms@2021-01-15' = {
 
 resource azureLoadBalancerDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: appserviceplan
-  name: '${resourceNamePrefix}-host-diagnostics'
+  name: '${resourceNamePrefix}-host-diagnostics-${resourceNameSuffix}'
   properties: {
     'workspaceId': workspace.id
     logs: [
@@ -36,7 +37,7 @@ resource azureLoadBalancerDiagnostics 'Microsoft.Insights/diagnosticSettings@202
 }
 
 resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: '${resourceNamePrefix}-insights'
+  name: '${resourceNamePrefix}-insights-${resourceNameSuffix}'
   location: resourceLocation  
   kind: 'web'
   properties: {
@@ -46,7 +47,7 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource flow 'Microsoft.Web/sites@2021-01-15' = {
-  name: '${resourceNamePrefix}-flows'
+  name: '${resourceNamePrefix}-flows-${resourceNameSuffix}'
   location: resourceLocation
   kind: 'functionapp,workflowapp'  
   identity: {
@@ -55,6 +56,18 @@ resource flow 'Microsoft.Web/sites@2021-01-15' = {
   properties: {
     siteConfig: {
       appSettings: [
+        {
+          name: 'FUNCTIONS_EXTENSION_VERSION'
+          value: '~3'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'node'
+        }
+        {
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
+          value: '~12'
+        }
         {
           name: 'APP_KIND'
           value: 'workflowApp'
@@ -77,15 +90,23 @@ resource flow 'Microsoft.Web/sites@2021-01-15' = {
         }
         {
           name: 'WEBSITE_CONTENTSHARE'
-          value: 'logicappshare'
+          value:'${toLower('${resourceNamePrefix}-flows')}8992'
         }
+        {
+          name: 'AzureFunctionsJobHost__extensionBundle__id'
+          value: 'Microsoft.Azure.Functions.ExtensionBundle.Workflows'
+        }
+        {
+          name: 'AzureFunctionsJobHost__extensionBundle__version'
+          value: '[1.*, 2.0.0)'
+        }        
       ]
     }
   }
 }
 
 resource appstorage 'Microsoft.Storage/storageAccounts@2021-04-01' = {
-  name: replace('${resourceNamePrefix}-host-store','-','')
+  name: replace('${resourceNamePrefix}-host-store-${resourceNameSuffix}','-','')
   location: resourceLocation
   kind: 'StorageV2'
   sku: {
@@ -97,8 +118,26 @@ resource appstorage 'Microsoft.Storage/storageAccounts@2021-04-01' = {
   }
 }
 
+resource storage_blob_container 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-04-01' = {
+  name: '${flowexchangestorage.name}/default/out'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+var blobContributorGuid = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+resource symbolicname 'Microsoft.Authorization/roleAssignments@2021-04-01-preview' = {
+  name: guid(flow.id, blobContributorGuid)
+  scope: storage_blob_container    
+  properties: {                
+    roleDefinitionId: tenantResourceId('Microsoft.Authorization/roleDefinitions', blobContributorGuid)
+    principalId: flow.identity.principalId
+  }
+}
+
+
 resource flowexchangestorage 'Microsoft.Storage/storageAccounts@2021-04-01' = {
-  name: replace('${resourceNamePrefix}-app-store','-','')
+  name: replace('${resourceNamePrefix}-app-store-${resourceNameSuffix}','-','')
   kind: 'StorageV2'
   location: resourceLocation
   sku: {

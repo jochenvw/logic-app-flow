@@ -1,10 +1,11 @@
-
-# Prereqs - run first time only
-# -----------------------------
 az login
-az group create --name logicapp-flow-test --location westeurope
+az group create --name logicapp-flow --location westeurope
+az deployment group create --template-file infra\main.bicep --resource-group logicapp-flow
 
-az deployment group create --template-file main.bicep --resource-group logicapp-flow-test
+
+
+## TO CHECK:
+az logic workflow create --resource-group "logicapp-flow-test" --location "westeurope" --name "business-process-handler" --definition "app/business-process-handler.json" 
 
 # Clean up
 az group delete --resource-group logicapp-flow-test
