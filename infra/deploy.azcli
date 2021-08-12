@@ -1,0 +1,10 @@
+
+# Prereqs - run first time only
+# -----------------------------
+az login
+az group create --name logicapp-flow-test --location westeurope
+
+az deployment group create --template-file main.bicep --resource-group logicapp-flow-test
+
+# Clean up
+az group delete --resource-group logicapp-flow-test
