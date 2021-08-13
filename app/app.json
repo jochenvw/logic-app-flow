@@ -1,99 +1,113 @@
-"actions": {
-    "Deploy_SQL_DB_in_managed_resource_group": {
-        "inputs": {
-            "authentication": {
-                "audience": "https://management.azure.com",
-                "type": "ManagedServiceIdentity"
-            },
-            "body": "@variables('SQLDBArmTemplate')",
-            "headers": {
-                "Content-type": "application/json"
-            },
-            "method": "PUT",
-            "uri": "https://management.azure.com/subscriptions/[subscriptionGUID]/resourcegroups/logicapp-flow-managed-rg/providers/Microsoft.Resources/deployments/logicappdeployment?api-version=2020-10-01"
-        },
-        "runAfter": {
-            "Set_SQL_DB_ARM_template_variable": [
-                "Succeeded"
-            ]
-        },
-        "type": "Http"
-    },
-    "Set_SQL_DB_ARM_template_variable": {
-        "inputs": {
-            "variables": [
-                {
-                    "name": "SQLDBArmTemplate",
-                    "type": "string",
-                    "value": "{\"properties\":{\"mode\":\"Incremental\",\"template\":{\"$schema\":\"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#\",\"contentVersion\":\"1.0.0.0\",\"metadata\":{\"_generator\":{\"name\":\"bicep\",\"version\":\"0.4.613.9944\",\"templateHash\":\"16116516621313287061\"}},\"functions\":[],\"variables\":{\"resourceNamePrefix\":\"logicapp-flow\"},\"resources\":[{\"type\":\"Microsoft.Sql/servers\",\"apiVersion\":\"2021-02-01-preview\",\"name\":\"[format('{0}-managed-sql-server',variables('resourceNamePrefix'))]\",\"location\":\"westeurope\",\"properties\":{\"administrators\":{\"administratorType\":\"ActiveDirectory\",\"login\":\"[admin]\",\"sid\":\"[sid]\",\"tenantId\":\"[tenantid]\",\"principalType\":\"User\",\"azureADOnlyAuthentication\":true}}},{\"type\":\"Microsoft.Sql/servers/databases\",\"apiVersion\":\"2020-08-01-preview\",\"name\":\"[format('{0}/DB1',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\",\"location\":\"westeurope\",\"properties\":{},\"sku\":{\"name\":\"Standard\",\"tier\":\"Standard\"},\"dependsOn\":[\"[resourceId('Microsoft.Sql/servers',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\"]}]}}}"
-                }
-            ]
-        },
-        "runAfter": {},
-        "type": "InitializeVariable"
-    },
-    "Until_ARM_deployment_is_succeeded": {
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
-            "Get_ARM_deployment_Status": {
+            "Deploy_SQL_DB_in_managed_resource_group": {
                 "inputs": {
                     "authentication": {
                         "audience": "https://management.azure.com",
                         "type": "ManagedServiceIdentity"
                     },
-                    "method": "GET",
-                    "uri": "https://management.azure.com/subscriptions/[subscriptionGUID]/resourcegroups/logicapp-flow-managed-rg/providers/Microsoft.Resources/deployments/logicappdeployment?api-version=2020-10-01"
+                    "body": "@variables('SQLDBArmTemplate')",
+                    "headers": {
+                        "Content-type": "application/json"
+                    },
+                    "method": "PUT",
+                    "uri": "https://management.azure.com/subscriptions/[SubscriptionId]/resourcegroups/logicapp-flow-managed-rg-test/providers/Microsoft.Resources/deployments/logicappdeployment?api-version=2020-10-01"
                 },
                 "runAfter": {
-                    "Wait_30_seconds_...": [
+                    "Set_SQL_DB_ARM_template_variable": [
                         "Succeeded"
                     ]
                 },
                 "type": "Http"
             },
-            "Wait_30_seconds_...": {
+            "Set_SQL_DB_ARM_template_variable": {
                 "inputs": {
-                    "interval": {
-                        "count": 30,
-                        "unit": "Second"
-                    }
+                    "variables": [
+                        {
+                            "name": "SQLDBArmTemplate",
+                            "type": "string",
+                            "value": "{\"properties\":{\"mode\":\"Incremental\",\"template\":{\"$schema\":\"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#\",\"contentVersion\":\"1.0.0.0\",\"metadata\":{\"_generator\":{\"name\":\"bicep\",\"version\":\"0.4.613.9944\",\"templateHash\":\"16116516621313287061\"}},\"functions\":[],\"variables\":{\"resourceNamePrefix\":\"logicapp-flow\"},\"resources\":[{\"type\":\"Microsoft.Sql/servers\",\"apiVersion\":\"2021-02-01-preview\",\"name\":\"[format('{0}-managed-sql-server',variables('resourceNamePrefix'))]\",\"location\":\"westeurope\",\"properties\":{\"administrators\":{\"administratorType\":\"ActiveDirectory\",\"login\":\"[SQLLOgin]\",\"sid\":\"[SQLLoginID]\",\"tenantId\":\"[TenantId]\",\"principalType\":\"User\",\"azureADOnlyAuthentication\":true}}},{\"type\":\"Microsoft.Sql/servers/databases\",\"apiVersion\":\"2020-08-01-preview\",\"name\":\"[format('{0}/DB1',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\",\"location\":\"westeurope\",\"properties\":{},\"sku\":{\"name\":\"Standard\",\"tier\":\"Standard\"},\"dependsOn\":[\"[resourceId('Microsoft.Sql/servers',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\"]}]}}}"
+                        }
+                    ]
                 },
                 "runAfter": {},
-                "type": "Wait"
+                "type": "InitializeVariable"
+            },
+            "Until_ARM_deployment_is_succeeded": {
+                "actions": {
+                    "Get_ARM_deployment_Status": {
+                        "inputs": {
+                            "authentication": {
+                                "audience": "https://management.azure.com",
+                                "type": "ManagedServiceIdentity"
+                            },
+                            "method": "GET",
+                            "uri": "https://management.azure.com/subscriptions/[SubscriptionId]/resourcegroups/logicapp-flow-managed-rg-test/providers/Microsoft.Resources/deployments/logicappdeployment?api-version=2020-10-01"
+                        },
+                        "runAfter": {
+                            "Wait_30_seconds": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Http"
+                    },
+                    "Wait_30_seconds": {
+                        "inputs": {
+                            "interval": {
+                                "count": 30,
+                                "unit": "Second"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "Wait"
+                    }
+                },
+                "expression": "@contains(string(body('Get_ARM_deployment_Status')), 'Succeeded')",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT1H"
+                },
+                "runAfter": {
+                    "Deploy_SQL_DB_in_managed_resource_group": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            },
+            "Upload_TXT_file_to_BLOB": {
+                "inputs": {
+                    "authentication": {
+                        "audience": "https://storage.azure.com/",
+                        "type": "ManagedServiceIdentity"
+                    },
+                    "body": "@triggerBody()",
+                    "headers": {
+                        "Content-length": "@{length(string(triggerBody()))}",
+                        "x-ms-blob-type": "BlockBlob",
+                        "x-ms-date": "@{formatDateTime(utcNow(),'r')}",
+                        "x-ms-version": "2019-02-02"
+                    },
+                    "method": "PUT",
+                    "uri": "https://flowappappstoredevjvw.blob.core.windows.net/out/myblob.json"
+                },
+                "runAfter": {
+                    "Until_ARM_deployment_is_succeeded": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
             }
         },
-        "expression": "@contains(string(body('Get_ARM_deployment_Status')), 'Succeeded')",
-        "limit": {
-            "count": 60,
-            "timeout": "PT1H"
-        },
-        "runAfter": {
-            "Deploy_SQL_DB_in_managed_resource_group": [
-                "Succeeded"
-            ]
-        },
-        "type": "Until"
+        "contentVersion": "1.0.0.0",
+        "triggers": {
+            "manual": {
+                "inputs": {},
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
     },
-    "Upload_TXT_file_to_BLOB": {
-        "inputs": {
-            "authentication": {
-                "audience": "https://storage.azure.com/",
-                "type": "ManagedServiceIdentity"
-            },
-            "body": "@triggerBody()",
-            "headers": {
-                "Content-length": "@{length(string(triggerBody()))}",
-                "x-ms-blob-type": "BlockBlob",
-                "x-ms-date": "@{formatDateTime(utcNow(),'r')}",
-                "x-ms-version": "2019-02-02"
-            },
-            "method": "PUT",
-            "uri": "https://logicappflowappstore.blob.core.windows.net/out/myblob.json"
-        },
-        "runAfter": {
-            "Until_ARM_deployment_is_succeeded": [
-                "Succeeded"
-            ]
-        },
-        "type": "Http"
-    }
-},
+    "kind": "Stateful"
+}
