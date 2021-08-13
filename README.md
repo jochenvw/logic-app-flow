@@ -1,5 +1,9 @@
 # logic-app-flow
 
+## Prereqs
+
+- Make ([Windows instructions here](https://stackoverflow.com/questions/32127524/how-to-install-and-use-make-in-windows))
+
 ## Structure
 - Infra: contains bicep file + parameters for deployment
 
