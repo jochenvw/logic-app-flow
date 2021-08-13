@@ -1,13 +1,14 @@
-param serverName string = uniqueString('sqlserverrabo', resourceGroup().id)
-param sqlDBName string = 'newdatabase'
+param sqlAADAdminUsername string
+param sqlAADAdminObjectId string
+
+
+
+
 param resourceLocation string = resourceGroup().location
-param administratorLogin string
 
-@secure()
-param administratorLoginPassword string
 
-var resourceNamePrefix = 'logicapp-flow'
-var resourceNameSuffix = '-dev'
+var resourceNamePrefix = 'flowapp'
+var resourceNameSuffix = 'dev-jvw'
 
 
 // ----------------- AppService --------------- //
@@ -94,24 +95,29 @@ resource storage_blob_container 'Microsoft.Storage/storageAccounts/blobServices/
 
 // ----------------- SQL Server + DB --------------- //
 
-resource server 'Microsoft.Sql/servers@2019-06-01-preview' = {
-  name: serverName
+resource server 'Microsoft.Sql/servers@2021-02-01-preview' = {
+  name: '${resourceNamePrefix}-dbserver-${resourceNameSuffix}'
   location: resourceLocation
   properties: {
-    administratorLogin: administratorLogin
-    administratorLoginPassword: administratorLoginPassword
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      login: sqlAADAdminUsername
+      sid: sqlAADAdminObjectId
+      tenantId: subscription().tenantId
+      principalType: 'User'
+      azureADOnlyAuthentication: true
+    }
   }
 }
 
-resource sqlDB 'Microsoft.Sql/servers/databases@2020-08-01-preview' = {
-  name: '${server.name}/${sqlDBName}'
+resource sqlDB 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
+  name: '${server.name}/statedb'
   location: resourceLocation
   sku: {
     name: 'Standard'
     tier: 'Standard'
   }
 }
-
 
 // ----------------- Logic App + Workflow --------------- //
 
@@ -216,9 +222,17 @@ resource workflow 'Microsoft.Logic/workflows@2019-05-01' = {
   }
 }
 
-
 // ----------------- Role Assignments --------------- //
+/*
+Ensures the logic app has rights to 
+- Write to BLOB storage
+- Write to the database
 
+Uses GUIDs for the roles because potentially the service principal used to run this makefile
+does not have rights to read AAD. In order to find the GUIDs for the roles - consider using
+Azure CLI command `az role definition list > roles.txt` (on Windows) - and then looking in 
+roles.txt to find the right role that gives least amount of privilige.
+*/
 var blobContributorGuid = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 resource blobContribRoleAssign 'Microsoft.Authorization/roleAssignments@2021-04-01-preview' = {
   name: guid(workflow.id, blobContributorGuid)
