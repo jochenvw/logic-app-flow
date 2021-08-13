@@ -1,1 +1,61 @@
-{\"$schema\":\"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#\",\"contentVersion\":\"1.0.0.0\",\"metadata\":{\"_generator\":{\"name\":\"bicep\",\"version\":\"0.4.613.9944\",\"templateHash\":\"16116516621313287061\"}},\"functions\":[],\"variables\":{\"resourceNamePrefix\":\"logicapp-flow\"},\"resources\":[{\"type\":\"Microsoft.Sql/servers\",\"apiVersion\":\"2021-02-01-preview\",\"name\":\"[format('{0}-managed-sql-server',variables('resourceNamePrefix'))]\",\"location\":\"westeurope\",\"properties\":{\"administrators\":{\"login\":\"jowylick@microsoft.com\",\"sid\":\"f191905c-9c01-408c-b402-6940db1f363d\",\"tenantId\":\"72f988bf-86f1-41af-91ab-2d7cd011db47\",\"principalType\":\"User\",\"azureADOnlyAuthentication\":true}}},{\"type\":\"Microsoft.Sql/servers/databases\",\"apiVersion\":\"2020-08-01-preview\",\"name\":\"[format('{0}/DB1',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\",\"location\":\"westeurope\",\"properties\":{},\"sku\":{\"name\":\"Standard\",\"tier\":\"Standard\"},\"dependsOn\":[\"[resourceId('Microsoft.Sql/servers',format('{0}-managed-sql-server',variables('resourceNamePrefix')))]\"]}]}
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.613.9944",
+      "templateHash": "11205691961232449671"
+    }
+  },
+  "parameters": {
+    "servername": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "dbname": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "functions": [],
+  "variables": {
+    "resourceNamePrefix": "logicapp-flow"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2021-02-01-preview",
+      "name": "[format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administrators": {
+          "administratorType": "ActiveDirectory",
+          "login": "[[admin]",
+          "sid": "[[admin-sid]",
+          "tenantId": "[[tenantid]",
+          "principalType": "User",
+          "azureADOnlyAuthentication": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2021-02-01-preview",
+      "name": "[format('{0}/{1}', format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername')), parameters('dbname'))]",
+      "location": "[parameters('location')]",
+      "properties": {},
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername')))]"
+      ]
+    }
+  ]
+}

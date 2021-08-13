@@ -1,12 +1,14 @@
 /*
 BIICEP - convert to JSON and use in LogicApp
 */
-
+param servername string = ''
+param dbname string = ''
+param location string = ''
 var resourceNamePrefix = 'logicapp-flow'
 
 resource server 'Microsoft.Sql/servers@2021-02-01-preview' = {
-  name: '${resourceNamePrefix}-managed-sql-server'
-  location: 'westeurope'
+  name: '${resourceNamePrefix}-managed-sql-server-${servername}'
+  location: location
   properties: {
     administrators: {
       administratorType: 'ActiveDirectory'
@@ -20,8 +22,8 @@ resource server 'Microsoft.Sql/servers@2021-02-01-preview' = {
 }
 
 resource sqlDB 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
-  name: '${server.name}/DB1'
-  location: 'westeurope'  
+  name: '${server.name}/${dbname}'
+  location: location  
   properties: {    
   }  
   sku: {

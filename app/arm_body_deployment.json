@@ -1,0 +1,150 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "HTTP": {
+                "inputs": {
+                    "authentication": {
+                        "audience": "https://storage.azure.com/",
+                        "type": "ManagedServiceIdentity"
+                    },
+                    "body": "@variables('arm-template-sql')",
+                    "headers": {
+                        "Content-length": "@{length(string(triggerBody()))}",
+                        "x-ms-blob-type": "BlockBlob",
+                        "x-ms-version": "2019-02-02"
+                    },
+                    "method": "PUT",
+                    "uri": "https://logicappflowappstoredev.blob.core.windows.net/out/myblob.json"
+                },
+                "runAfter": {
+                    "Set_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Initialize_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "arm-template-sql",
+                            "type": "object",
+                            "value": {}
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "properties": {
+                            "databasename": {
+                                "type": "string"
+                            },
+                            "location": {
+                                "type": "string"
+                            },
+                            "servername": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Set_variable": {
+                "inputs": {
+                    "name": "arm-template-sql",
+                    "value": {
+                        "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                        "contentVersion": "1.0.0.0",
+                        "functions": [],
+                        "metadata": {
+                            "_generator": {
+                                "name": "bicep",
+                                "templateHash": "11205691961232449671",
+                                "version": "0.4.613.9944"
+                            }
+                        },
+                        "parameters": {
+                            "dbname": {
+                                "defaultValue": "@body('Parse_JSON')?['databasename']",
+                                "type": "string"
+                            },
+                            "location": {
+                                "defaultValue": "@body('Parse_JSON')?['location']",
+                                "type": "string"
+                            },
+                            "servername": {
+                                "defaultValue": "@body('Parse_JSON')?['servername']",
+                                "type": "string"
+                            }
+                        },
+                        "resources": [
+                            {
+                                "apiVersion": "2021-02-01-preview",
+                                "location": "[parameters('location')]",
+                                "name": "[format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername'))]",
+                                "properties": {
+                                    "administrators": {
+                                        "administratorType": "ActiveDirectory",
+                                        "azureADOnlyAuthentication": true,
+                                        "login": "[[admin]",
+                                        "principalType": "User",
+                                        "sid": "[[admin-sid]",
+                                        "tenantId": "[[tenantid]"
+                                    }
+                                },
+                                "type": "Microsoft.Sql/servers"
+                            },
+                            {
+                                "apiVersion": "2021-02-01-preview",
+                                "dependsOn": [
+                                    "[resourceId('Microsoft.Sql/servers', format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername')))]"
+                                ],
+                                "location": "[parameters('location')]",
+                                "name": "[format('{0}/{1}', format('{0}-managed-sql-server-{1}', variables('resourceNamePrefix'), parameters('servername')), parameters('dbname'))]",
+                                "properties": {},
+                                "sku": {
+                                    "name": "Standard",
+                                    "tier": "Standard"
+                                },
+                                "type": "Microsoft.Sql/servers/databases"
+                            }
+                        ],
+                        "variables": {
+                            "resourceNamePrefix": "logicapp-flow"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "SetVariable"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "manual": {
+                "inputs": {},
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {}
+}
